@@ -1,3 +1,4 @@
-*
-!*.c
-!.txt
+*.o
+.idea
+*.sh
+cmake-build-debug
