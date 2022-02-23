@@ -41,7 +41,7 @@ static void* func2(void* arg) {
     pthread_exit((void*)2);
 }
 
-int main1() {
+int main() {
     printf("Программа начала работу.\n");
 
     T args1;
