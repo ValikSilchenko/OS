@@ -3,4 +3,4 @@ project(OS C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(OS lab1.c lab2.c)
+add_executable(OS lab1.c with_lock.c)

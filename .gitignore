@@ -1,4 +1,5 @@
 *.o
 .idea
 *.sh
+lab
 cmake-build-debug
