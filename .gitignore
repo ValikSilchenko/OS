@@ -2,3 +2,4 @@
 .idea
 *.sh
 cmake-build-debug
+lab
