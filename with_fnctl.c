@@ -39,7 +39,7 @@ void* func2(void* args) {
 int main() {
     printf("Программа начала работу.\n");
     pthread_t id1, id2;
-    pipe2(fields, O_NONBLOCK);
+    pipe(fields);
     pthread_create(&id1, NULL, func1, NULL);
     pthread_create(&id2, NULL, func2, NULL);
 
