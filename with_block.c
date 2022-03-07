@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <string.h>
+
+int N = 100;
 
 int flag1 = 0, flag2 = 0;
 int fields[2];
@@ -8,10 +11,11 @@ int fields[2];
 void* func1(void* args) {
     printf("Поток 1 начал работу.\n");
 
-    char buf[255];
+    char buf[N];
     while (flag1 == 0) {
-        getdomainname(buf, 255);
-        write(fields[1], buf, 255);
+        getdomainname(buf, N);
+        N = strlen(buf);
+        write(fields[1], buf, N);
         printf("Поток 1 записал данные в канал.\n");
         sleep(1);
     }
@@ -23,11 +27,10 @@ void* func1(void* args) {
 void* func2(void* args) {
     printf("Поток 2 начал работу.\n");
 
-    char buf[255];
+    char buf[N];
     while (flag2 == 0) {
-        read(fields[0], buf, 255);
+        read(fields[0], buf, N);
         printf("Поток 2 считал данные с канала: %s\n", buf);
-        sleep(1);
     }
 
     printf("Поток 2 завершил работу.\n");

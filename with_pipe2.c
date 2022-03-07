@@ -2,6 +2,10 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <string.h>
+#include <errno.h>
+
+int N = 100;
 
 int flag1 = 0, flag2 = 0;
 int fields[2];
@@ -9,10 +13,11 @@ int fields[2];
 void* func1(void* args) {
     printf("Поток 1 начал работу.\n");
 
-    char buf[255];
+    char buf[N];
     while (flag1 == 0) {
-        getdomainname(buf, 255);
-        if (write(fields[1], buf, 255) != -1)
+        getdomainname(buf, N);
+        N = strlen(buf);
+        if (write(fields[1], buf, N) != -1)
             printf("Поток 1 записал данные в канал.\n");
         sleep(1);
     }
@@ -24,10 +29,16 @@ void* func1(void* args) {
 void* func2(void* args) {
     printf("Поток 2 начал работу.\n");
 
-    char buf[255];
+    char buf[N];
     while (flag2 == 0) {
-        if (read(fields[0], buf, 255) > 0)
-            printf("Поток 2 считал данные с канала: %s\n", buf);
+        switch (read(fields[0], buf, N)) {
+            case -1:
+            case 0:
+                printf("Ошибка чтения: %s\n", strerror(errno));
+                break;
+            default:
+                printf("Поток 2 считал данные с канала: %s\n", buf);
+        }
         sleep(1);
     }
 
