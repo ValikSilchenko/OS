@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -11,7 +10,7 @@ void* func1(void* args) {
     printf("Поток 1 начал работу.\n");
 
     char buf[255];
-    while (flag2 == 0) {
+    while (flag1 == 0) {
         getdomainname(buf, 255);
         if (write(fields[1], buf, 255) != -1)
             printf("Поток 1 записал данные в канал.\n");
@@ -40,6 +39,8 @@ int main() {
     printf("Программа начала работу.\n");
     pthread_t id1, id2;
     pipe(fields);
+    fcntl(fields[0], F_SETFL, O_NONBLOCK);
+    fcntl(fields[1], F_SETFL, O_NONBLOCK);
     pthread_create(&id1, NULL, func1, NULL);
     pthread_create(&id2, NULL, func2, NULL);
 

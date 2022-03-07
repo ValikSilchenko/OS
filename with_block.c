@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <unistd.h>
 
@@ -10,7 +9,7 @@ void* func1(void* args) {
     printf("Поток 1 начал работу.\n");
 
     char buf[255];
-    while (flag2 == 0) {
+    while (flag1 == 0) {
         getdomainname(buf, 255);
         write(fields[1], buf, 255);
         printf("Поток 1 записал данные в канал.\n");
