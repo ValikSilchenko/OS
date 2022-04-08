@@ -5,29 +5,34 @@
 #include <string.h>
 #include <stdlib.h>
 #include <errno.h>
-
+#include <time.h>
 
 int flag = 0;
 char name[] = "/queue";
 int N = 100;
 
 void* func(void* args) {
-    struct mq_attr attr;
-    attr.mq_msgsize = 8200;
-    mqd_t q_id = mq_open(name, O_CREAT | O_RDWR, 0666, NULL);
+    mqd_t q_id = mq_open(name, O_CREAT | O_WRONLY | O_NONBLOCK, S_IWUSR | S_IRUSR, NULL);
     if (q_id == -1) {
         perror("mq_open error");
         exit(errno);
     }
+
     char buf[N];
+    struct timespec time;
+
     while (flag == 0) {
         getdomainname(buf, N);
         N = strlen(buf);
-        printf("%s\n", buf);
-        if (mq_send(q_id, buf, N, 1) == -1)
+        clock_gettime(CLOCK_REALTIME, &time);
+        time.tv_sec += 7;
+        if (mq_timedsend(q_id, buf, N, NULL, &time) == -1)
             perror("mq_send error");
+        else
+            printf("Отправлено сообщение: %s\n", buf);
         sleep(1);
     }
+
     mq_close(q_id);
     pthread_exit(NULL);
 }
