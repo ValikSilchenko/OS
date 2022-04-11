@@ -11,14 +11,22 @@ int flag = 0;
 char name[] = "/queue";
 
 void* func(void* args) {
-    mqd_t q_id = mq_open(name, O_CREAT | O_RDONLY | O_NONBLOCK, S_IRUSR | S_IWUSR, NULL);
+    struct mq_attr attr;
+    int oflag = O_CREAT | O_RDONLY;
+    attr.mq_maxmsg = 15;
+    attr.mq_msgsize = 200;
+    mqd_t q_id = mq_open(name, oflag, S_IRUSR | S_IWUSR, &attr);
     if (q_id == -1) {
         perror("mq_open error");
         exit(errno);
     }
-
-    struct mq_attr attr;
+    attr.mq_flags = O_NONBLOCK;
+    mq_setattr(q_id, &attr, NULL);
+    attr.mq_msgsize = 0;
+    attr.mq_maxmsg = 0;
     mq_getattr(q_id, &attr);
+    printf("Изменённые атрибуты: maxmsg - %ld, msgsize - %ld\n", attr.mq_maxmsg, attr.mq_msgsize);
+
     long int N = attr.mq_msgsize;
     char buf[N];
     struct timespec time;
@@ -26,9 +34,9 @@ void* func(void* args) {
     while (flag == 0) {
         memset(buf, 0, N);
         clock_gettime(CLOCK_REALTIME, &time);
-        time.tv_sec += 7;
+        time.tv_sec += 5;
         if (mq_timedreceive(q_id, buf, N, NULL, &time) == -1) {
-            perror("mq_receive error");
+            perror("mq_timedreceive error");
             sleep(1);
         } else
             printf("Получено сообщение: %s\n", buf);

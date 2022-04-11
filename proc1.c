@@ -9,14 +9,24 @@
 
 int flag = 0;
 char name[] = "/queue";
-int N = 100;
+int N = 200;
 
 void* func(void* args) {
-    mqd_t q_id = mq_open(name, O_CREAT | O_WRONLY | O_NONBLOCK, S_IWUSR | S_IRUSR, NULL);
+    struct mq_attr attr;
+    int oflag = O_CREAT | O_WRONLY;
+    attr.mq_maxmsg = 15;
+    attr.mq_msgsize = N;
+    mqd_t q_id = mq_open(name, oflag, S_IWUSR | S_IRUSR, &attr);
     if (q_id == -1) {
         perror("mq_open error");
         exit(errno);
     }
+    attr.mq_flags = O_NONBLOCK;
+    mq_setattr(q_id, &attr, NULL);
+    attr.mq_msgsize = 0;
+    attr.mq_maxmsg = 0;
+    mq_getattr(q_id, &attr);
+    printf("Изменённые атрибуты: maxmsg - %ld, msgsize - %ld\n", attr.mq_maxmsg, attr.mq_msgsize);
 
     char buf[N];
     struct timespec time;
@@ -25,9 +35,11 @@ void* func(void* args) {
         getdomainname(buf, N);
         N = strlen(buf);
         clock_gettime(CLOCK_REALTIME, &time);
-        time.tv_sec += 7;
+        time.tv_sec += 5;
+        mq_getattr(q_id, &attr);
+        printf("Количество сообщений в очереди: %ld\n", attr.mq_curmsgs);
         if (mq_timedsend(q_id, buf, N, NULL, &time) == -1)
-            perror("mq_send error");
+            perror("mq_timedsend error");
         else
             printf("Отправлено сообщение: %s\n", buf);
         sleep(1);
