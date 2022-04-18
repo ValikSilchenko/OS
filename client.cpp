@@ -18,7 +18,7 @@ void* receiving(void* args) {
     char buf[N];
     long received;
     while (receivingFl) {
-        if ((received = recv(serverSoc, buf, N, 0)) == -1) {
+        if ((received = recv(soc, buf, N, 0)) == -1) {
             perror("receive");
             sleep(1);
         } else if (received == 0) {
@@ -26,7 +26,7 @@ void* receiving(void* args) {
             sleep(1);
         } else {
             receiveCntr++;
-            printf("Ответ %d получен: %s", receiveCntr, buf);
+            printf("Ответ %d получен: %s\n", receiveCntr, buf);
         }
     }
     pthread_exit(nullptr);
@@ -35,7 +35,7 @@ void* receiving(void* args) {
 void* sending(void* args) {
     while (sendingFl) {
         sendCntr++;
-        if ((send(serverSoc, &sendCntr, sizeof(sendCntr), 0)) == -1)
+        if ((send(soc, &sendCntr, sizeof(sendCntr), 0)) == -1)
             perror("send");
         else
             printf("Запрос %d отправлен.\n", sendCntr);
@@ -89,7 +89,9 @@ int main() {
     pthread_join(idSnd, nullptr);
 
     shutdown(soc, 2);
+    shutdown(serverSoc, 2);
     close(soc);
+    close(serverSoc);
 
     printf("Клиентская программа закончила работу.\n");
     return 0;
