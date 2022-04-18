@@ -7,10 +7,9 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-int soc, serverSoc, bufSize = 10, sendCntr = 0, receiveCntr = 0;
-char name[] = "mycock";
+int soc, sendCntr = 0, receiveCntr = 0;
+char name[] = "mysock";
 bool receivingFl = true, sendingFl = true, connectionFl = true;
-socklen_t len;
 pthread_t idCon, idSnd, idRcv;
 
 void* receiving(void* args) {
@@ -18,7 +17,7 @@ void* receiving(void* args) {
     char buf[N];
     long received;
     while (receivingFl) {
-        if ((received = recv(soc, buf, N, 0)) == -1) {
+        if ((received = recv(soc, buf, N, MSG_NOSIGNAL)) == -1) {
             perror("receive");
             sleep(1);
         } else if (received == 0) {
@@ -26,7 +25,7 @@ void* receiving(void* args) {
             sleep(1);
         } else {
             receiveCntr++;
-            printf("Ответ %d получен: %s\n", receiveCntr, buf);
+            printf("Ответ %d получен: %s\n\n", receiveCntr, buf);
         }
     }
     pthread_exit(nullptr);
@@ -34,24 +33,27 @@ void* receiving(void* args) {
 
 void* sending(void* args) {
     while (sendingFl) {
-        sendCntr++;
-        if ((send(soc, &sendCntr, sizeof(sendCntr), 0)) == -1)
-            perror("send");
-        else
-            printf("Запрос %d отправлен.\n", sendCntr);
-        sleep(1);
+        if (sendCntr == receiveCntr) {
+            sendCntr++;
+            if ((send(soc, &sendCntr, sizeof(sendCntr), MSG_NOSIGNAL)) == -1) {
+                perror("send");
+                sendCntr--;
+            } else
+                printf("Запрос %d отправлен.\n", sendCntr);
+            sleep(1);
+        }
     }
     pthread_exit(nullptr);
 }
 
 void* connection(void* args) {
     printf("Ожидание соединения.\n");
-    struct sockaddr_un serverAddr;
+    struct sockaddr_un serverAddr {};
     bzero(&serverAddr, sizeof(serverAddr));
     serverAddr.sun_family = AF_UNIX;
     strcpy(serverAddr.sun_path, name);
     while (connectionFl) {
-        if ((serverSoc = connect(soc, (sockaddr*)(&serverAddr), sizeof(serverAddr))) == -1) {
+        if (connect(soc, (sockaddr*) &serverAddr, sizeof(serverAddr)) == -1) {
             perror("connect");
             sleep(1);
         } else {
@@ -72,8 +74,6 @@ int main() {
         exit(errno);
     }
     fcntl(soc, F_SETFL, O_NONBLOCK);
-    int optVal = 1;
-    setsockopt(soc, SOL_SOCKET, SO_REUSEADDR, &optVal, sizeof(optVal));
 
     pthread_create(&idCon, nullptr, connection, nullptr);
 
@@ -88,10 +88,8 @@ int main() {
     pthread_join(idRcv, nullptr);
     pthread_join(idSnd, nullptr);
 
-    shutdown(soc, 2);
-    shutdown(serverSoc, 2);
+    shutdown(soc, SHUT_RDWR);
     close(soc);
-    close(serverSoc);
 
     printf("Клиентская программа закончила работу.\n");
     return 0;
